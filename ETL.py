@@ -114,9 +114,18 @@ cat_sales = (items_prod.groupby("product_category_name_english", as_index = Fals
         .agg(revenue = ("line_revenue", "sum"), items = ("order_item_id", "count"))
         .sort_values("revenue", ascending = False))
           
-#11
+#11 Getting monthly sales
+#sort function = sort_values(#)
+monthly_sales = (fact_orders.groupby("order_month", as_index = False)
+                 .agg(reveunue = ("total_sales", "sum"),
+                      orders = ("order_id", "sum"),
+                      aov = ("total_sales", "mean"))
+                 .sort_values("order_month")
+)
 
-
-
-
-
+#12 Getting state sales
+state_sales = (fact_orders.groupby("customer_state", as_index = False, observed = False)
+               .agg(revenue = ("total_sales", "sum"),
+                    orders = ("order_id", "sum"))
+               .sort_values("revenue", ascending = False)
+)
