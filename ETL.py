@@ -12,7 +12,7 @@ Processed = os.path.join(Base, "datasets", "processed")
 
 #Setting MySQL Path
 Password = quote_plus("Happydk@1")
-engine = create_engine("mysql+mysqlconnector://root:Password@localhost/ecommerce_db")
+engine = create_engine(f"mysql+mysqlconnector://root:{Password}@localhost/ecommerce_db")
 
 #Read CSV Files
 orders = pd.read_csv(os.path.join(Raw, "olist_orders_dataset.csv"),
@@ -94,8 +94,8 @@ pay_agg = (payments.groupby("order_id", as_index = False)).agg(
 #7. Combining order_delivered with customers info, items price info, and payments info
 fact_orders = (
         orders_cust.merge(order_items_agg, on = "order_id", how = "left")
-                   .merge(pay_agg, on = "order_id", how = "left"                        
-                   ))
+                   .merge(pay_agg, on = "order_id", how = "left")
+)
         
 #8. Creating new columns including each order month and shpping days
 #dt.to_period('M') <= shows only YYYY/MM
@@ -118,14 +118,29 @@ cat_sales = (items_prod.groupby("product_category_name_english", as_index = Fals
 #sort function = sort_values(#)
 monthly_sales = (fact_orders.groupby("order_month", as_index = False)
                  .agg(reveunue = ("total_sales", "sum"),
-                      orders = ("order_id", "sum"),
+                      orders = ("order_id", "nunique"),
                       aov = ("total_sales", "mean"))
                  .sort_values("order_month")
 )
 
 #12 Getting state sales
+#Use nunique instead of count since it drops duplicate order id, I wanted to know how many orders are happend
 state_sales = (fact_orders.groupby("customer_state", as_index = False, observed = False)
                .agg(revenue = ("total_sales", "sum"),
-                    orders = ("order_id", "sum"))
+                    orders = ("order_id", "nunique"))
                .sort_values("revenue", ascending = False)
 )
+
+####Load####
+#Sending files I transfromed to mySQL
+#file_name.to_sql("table_name", engine, if_exists = "replace", index = False)
+fact_orders.to_sql("fact_orders", engine, if_exists = "replace", index = False)
+cat_sales.to_sql("agg_category_sales", engine, if_exists = "replace", index = False)
+monthly_sales.to_sql("agg_monthly_sales", engine, if_exists = "replace", index = False)
+state_sales.to_sql("agg_state_sales", engine, if_exists = "replace", index = False)
+
+#Storing as CSV file in the folder, processed
+fact_orders.to_csv(os.path.join(Processed, "fact_orders.csv"), index = False)
+cat_sales.to_csv(os.path.join(Processed, "agg_category_sales"), index = False)
+monthly_sales.to_csv(os.path.join(Processed, "agg_monthly_sales"), index = False)
+state_sales.to_csv(os.path.join(Processed, "agg_state_sales"), index = False)
