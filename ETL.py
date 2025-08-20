@@ -117,7 +117,7 @@ cat_sales = (items_prod.groupby("product_category_name_english", as_index = Fals
 #11 Getting monthly sales
 #sort function = sort_values(#)
 monthly_sales = (fact_orders.groupby("order_month", as_index = False)
-                 .agg(reveunue = ("total_sales", "sum"),
+                 .agg(revenue = ("total_sales", "sum"),
                       orders = ("order_id", "nunique"),
                       aov = ("total_sales", "mean"))
                  .sort_values("order_month")
